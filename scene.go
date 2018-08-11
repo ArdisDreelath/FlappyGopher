@@ -13,7 +13,7 @@ type scene struct {
 	time int
 	r    *sdl.Renderer
 	bg   *sdl.Texture
-	ship []*sdl.Texture
+	ship *ship
 }
 
 func newScene(r *sdl.Renderer) (*scene, error) {
@@ -22,15 +22,12 @@ func newScene(r *sdl.Renderer) (*scene, error) {
 		return nil, fmt.Errorf("Could not load background image: %v", err)
 	}
 
-	s := scene{r: r, bg: bg, ship: make([]*sdl.Texture, 4)}
-
-	for i := 1; i <= 4; i++ {
-		ship, err := img.LoadTexture(r, fmt.Sprintf("res/images/airship%d.png", i))
-		if err != nil {
-			return nil, fmt.Errorf("Could not load ship image: %v", err)
-		}
-		s.ship[i-1] = ship
+	ship, err := newShip(r)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create ship: %v", err)
 	}
+
+	s := scene{r: r, bg: bg, ship: ship}
 
 	return &s, nil
 }
@@ -41,10 +38,9 @@ func (s *scene) draw() error {
 	if err := s.r.Copy(s.bg, nil, nil); err != nil {
 		return fmt.Errorf("Could not copy background: %v", err)
 	}
-	rect := &sdl.Rect{W: 50, H: 43, X: 10, Y: int32(225 + (s.time/5)%100)}
-	i := s.time / 10 % len(s.ship)
-	if err := s.r.Copy(s.ship[i], nil, rect); err != nil {
-		return fmt.Errorf("Could not copy background: %v", err)
+
+	if err := s.ship.draw(); err != nil {
+		return fmt.Errorf("Could not draw ship: %v", err)
 	}
 
 	s.r.Present()
@@ -52,9 +48,7 @@ func (s *scene) draw() error {
 }
 
 func (s *scene) destroy() {
-	for _, ship := range s.ship {
-		ship.Destroy()
-	}
+	s.ship.destroy()
 	s.bg.Destroy()
 }
 
