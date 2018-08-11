@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
@@ -37,6 +38,13 @@ func run() error {
 	if err := drawTitle(r); err != nil {
 		return fmt.Errorf("Could not draw a title: %v", err)
 	}
+
+	time.Sleep(5 * time.Second)
+
+	if err := drawBackground(r); err != nil {
+		return fmt.Errorf("Could not draw a background: %v", err)
+	}
+
 	time.Sleep(5 * time.Second)
 
 	return nil
@@ -44,7 +52,7 @@ func run() error {
 
 func drawTitle(r *sdl.Renderer) error {
 	r.Clear()
-	f, err := ttf.OpenFont("res/fonts/Monoton-Regular.ttf", 315)
+	f, err := ttf.OpenFont("res/fonts/Monoton-Regular.ttf", 615)
 	if err != nil {
 		return fmt.Errorf("Could not open font: %v", err)
 	}
@@ -65,6 +73,22 @@ func drawTitle(r *sdl.Renderer) error {
 	if err := r.Copy(t, nil, nil); err != nil {
 		return fmt.Errorf("Could not copy a title texture: %v", err)
 	}
+	r.Present()
+
+	return nil
+}
+
+func drawBackground(r *sdl.Renderer) error {
+	r.Clear()
+	t, err := img.LoadTexture(r, "res/images/bg1.jpg")
+	if err != nil {
+		return fmt.Errorf("Could not load background image: %v", err)
+	}
+	defer t.Destroy()
+	if err != r.Copy(t, nil, nil) {
+		return fmt.Errorf("Could not copy background: %v", err)
+	}
+
 	r.Present()
 
 	return nil
