@@ -1,8 +1,8 @@
 package main
 
 import (
-	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/veandco/go-sdl2/img"
@@ -32,6 +32,10 @@ func newScene(r *sdl.Renderer) (*scene, error) {
 	return &s, nil
 }
 
+func (s *scene) update() {
+	s.ship.update()
+}
+
 func (s *scene) draw() error {
 	s.time++
 	s.r.Clear()
@@ -52,15 +56,25 @@ func (s *scene) destroy() {
 	s.bg.Destroy()
 }
 
-func (s *scene) run(ctx context.Context) <-chan error {
+func (s *scene) run(events <-chan sdl.Event) <-chan error {
 	errc := make(chan error)
+
 	go func() {
 		defer close(errc)
-		for range time.Tick(10 * time.Millisecond) {
+		ticker := time.Tick(10 * time.Millisecond)
+		done := false
+		for !done {
 			select {
-			case <-ctx.Done():
-				return
-			default:
+			case e := <-events:
+				done = s.handleEvent(e)
+			case <-ticker:
+				s.update()
+				if s.ship.isDead() {
+					drawTitle(s.r, "GAME OVER")
+					time.Sleep(time.Second)
+					s.restart()
+				}
+
 				if err := s.draw(); err != nil {
 					errc <- err
 				}
@@ -68,4 +82,22 @@ func (s *scene) run(ctx context.Context) <-chan error {
 		}
 	}()
 	return errc
+}
+
+func (s *scene) handleEvent(event sdl.Event) bool {
+	switch e := event.(type) {
+	case *sdl.QuitEvent:
+		return true
+	case *sdl.MouseButtonEvent:
+		if e.Type == sdl.MOUSEBUTTONDOWN {
+			s.ship.jump()
+		}
+	default:
+		log.Printf("unknown event %T", event)
+	}
+	return false
+}
+
+func (s *scene) restart() {
+	s.ship.restart()
 }
