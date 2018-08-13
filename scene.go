@@ -9,11 +9,18 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+type sceneObject interface {
+	update() error
+	draw() error
+	reset() error
+}
+
 type scene struct {
-	time int
-	r    *sdl.Renderer
-	bg   *sdl.Texture
-	ship *ship
+	time         int
+	r            *sdl.Renderer
+	bg           *sdl.Texture
+	ship         *ship
+	sceneObjects []sceneObject
 }
 
 func newScene(r *sdl.Renderer) (*scene, error) {
@@ -28,12 +35,21 @@ func newScene(r *sdl.Renderer) (*scene, error) {
 	}
 
 	s := scene{r: r, bg: bg, ship: ship}
+	s.sceneObjects = append(s.sceneObjects, ship)
+
+	asteroids, err := newAsteroids(r, ship)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create asteroids: %v", err)
+	}
+	s.sceneObjects = append(s.sceneObjects, asteroids)
 
 	return &s, nil
 }
 
 func (s *scene) update() {
-	s.ship.update()
+	for _, o := range s.sceneObjects {
+		o.update()
+	}
 }
 
 func (s *scene) draw() error {
@@ -43,8 +59,8 @@ func (s *scene) draw() error {
 		return fmt.Errorf("Could not copy background: %v", err)
 	}
 
-	if err := s.ship.draw(); err != nil {
-		return fmt.Errorf("Could not draw ship: %v", err)
+	for _, o := range s.sceneObjects {
+		o.draw()
 	}
 
 	s.r.Present()
@@ -88,6 +104,8 @@ func (s *scene) handleEvent(event sdl.Event) bool {
 	switch e := event.(type) {
 	case *sdl.QuitEvent:
 		return true
+	case *sdl.MouseMotionEvent:
+	case *sdl.WindowEvent:
 	case *sdl.MouseButtonEvent:
 		if e.Type == sdl.MOUSEBUTTONDOWN {
 			s.ship.jump()
@@ -99,5 +117,7 @@ func (s *scene) handleEvent(event sdl.Event) bool {
 }
 
 func (s *scene) restart() {
-	s.ship.restart()
+	for _, o := range s.sceneObjects {
+		o.reset()
+	}
 }
