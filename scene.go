@@ -106,6 +106,7 @@ func (s *scene) handleEvent(event sdl.Event) bool {
 		return true
 	case *sdl.MouseMotionEvent:
 	case *sdl.WindowEvent:
+	case *sdl.AudioDeviceEvent:
 	case *sdl.MouseButtonEvent:
 		if e.Type == sdl.MOUSEBUTTONDOWN {
 			s.ship.jump()
