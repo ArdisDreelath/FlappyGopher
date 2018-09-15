@@ -36,9 +36,11 @@ func newAsteroids(r *sdl.Renderer, s *ship) (*asteroids, error) {
 	go func() {
 		for {
 			time.Sleep(time.Millisecond * 750)
-			size := 1 + rand.Intn(5)
+			//size := 1 + rand.Intn(5)
+			size := 3
 			r := float64(20 + 10*size)
-			speed := float64(10 - size)
+			//speed := float64(10 - size)
+			speed := float64(9)
 			a.createAsteroid(int32(rand.Intn(786)), r, speed, a.textures[0])
 		}
 	}()
@@ -115,4 +117,33 @@ func (a *asteroids) checkCollisions() {
 	if hit {
 		a.ship.hit()
 	}
+}
+
+func (a *asteroids) checkCollisionWithPoint(x, y int) bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	for _, ast := range a.list {
+		astCircle := collision2d.NewCircle(collision2d.NewVector(float64(ast.x), float64(ast.y)), ast.r)
+		inCollision := collision2d.PointInCircle(collision2d.NewVector(float64(x), float64(y)), astCircle)
+		if inCollision {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (a *asteroids) checkCollisionsWithRect(x, y, w, h int32) bool {
+	shipBox := collision2d.NewBox(collision2d.NewVector(float64(x-w/2), float64(y-h/2)), float64(w), float64(h))
+
+	for _, ast := range a.list {
+		astCircle := collision2d.NewCircle(collision2d.NewVector(float64(ast.x), float64(ast.y)), ast.r)
+		inCollision, _ := collision2d.TestPolygonCircle(shipBox.ToPolygon(), astCircle)
+		if inCollision {
+			return true
+		}
+	}
+
+	return false
 }

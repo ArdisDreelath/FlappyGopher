@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"runtime"
 	"time"
@@ -17,6 +18,7 @@ func main() {
 }
 
 func run() error {
+	rand.Seed(3)
 	err := sdl.Init(sdl.INIT_EVERYTHING)
 	if err != nil {
 		return fmt.Errorf("Could not initalize SDL: %v", err)
